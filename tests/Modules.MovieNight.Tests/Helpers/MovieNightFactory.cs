@@ -28,7 +28,13 @@ public sealed class MovieNightFactory : WebApplicationFactory<Program>
     /// <summary>Bot:MiniAppShortName; null = не задан.</summary>
     public string? MiniAppShortName { get; init; } = "app";
 
+    /// <summary>Bot:PublicUrl; null = не задан (нет WebAppUrl, BotSetupService ничего не делает).</summary>
+    public string? PublicUrl { get; init; }
+
     public FakeClock Clock { get; } = new();
+
+    /// <summary>Подмена primary handler именованного HttpClient "telegram": запись и фейковые ответы Bot API.</summary>
+    public FakeTelegramHandler BotApi { get; } = new();
 
     public LogCapture Logs { get; } = new();
 
@@ -65,6 +71,7 @@ public sealed class MovieNightFactory : WebApplicationFactory<Program>
         builder.UseSetting("WebApp:DistPath", Path.Combine(_dir, "no-dist"));
         if (Username is not null) builder.UseSetting("Bot:Username", Username);
         if (MiniAppShortName is not null) builder.UseSetting("Bot:MiniAppShortName", MiniAppShortName);
+        if (PublicUrl is not null) builder.UseSetting("Bot:PublicUrl", PublicUrl);
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
@@ -79,6 +86,8 @@ public sealed class MovieNightFactory : WebApplicationFactory<Program>
             services.AddSingleton<IMessageSender>(Sender);
             services.RemoveAll<IInviteCodeGenerator>();
             services.AddSingleton<IInviteCodeGenerator>(Codes);
+            // Поздняя регистрация поверх платформенной подменяет primary handler (проверено тестом AC1 setMyCommands).
+            services.AddHttpClient("telegram").ConfigurePrimaryHttpMessageHandler(() => BotApi);
         });
     }
 
@@ -86,6 +95,15 @@ public sealed class MovieNightFactory : WebApplicationFactory<Program>
     {
         await base.DisposeAsync();
         TempDir.TryDelete(_dir);
+    }
+
+    /// <summary>POST /bot/webhook с секретом; после ответа все эффекты обновления уже случились.</summary>
+    public async Task<HttpResponseMessage> PostUpdateAsync(global::Telegram.Bot.Types.Update update)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/bot/webhook");
+        request.Headers.TryAddWithoutValidation("X-Telegram-Bot-Api-Secret-Token", "test-webhook-secret");
+        request.Content = new StringContent(TestUpdates.ToJson(update), Encoding.UTF8, "application/json");
+        return await CreateClient().SendAsync(request);
     }
 
     // ---------------- HTTP helpers ----------------

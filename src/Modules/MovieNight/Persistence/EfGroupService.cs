@@ -139,14 +139,27 @@ internal sealed class EfGroupService(
                 var target = await db.Members.FirstOrDefaultAsync(
                     m => m.GroupId == groupId && m.UserId == memberUserId, ct)
                     ?? throw new GroupException(GroupError.MemberNotFound);
-                db.Members.Remove(target);
-                await db.SaveChangesAsync(ct);
+                return (0, await RemoveAsync(group, userId, target, ct));
+            },
+            ct);
 
-                var others = await db.Members.Where(m => m.GroupId == groupId && m.UserId != userId)
-                    .Select(m => m.UserId).ToListAsync(ct);
-                var notices = others.Select(id => new Notice(id, NoticeKind.Left, memberUserId, group.Name)).ToList();
-                notices.Add(new Notice(memberUserId, NoticeKind.Removed, memberUserId, group.Name));
-                return (0, notices);
+    public async Task<string> RemoveMembershipAsync(long userId, Guid groupId, long joinSeq, CancellationToken ct) =>
+        await WriteAsync<string>(
+            async () =>
+            {
+                var group = await RequireOwnedGroupAsync(userId, groupId, ct);
+                var target = await db.Members.FirstOrDefaultAsync(
+                    m => m.GroupId == groupId && m.JoinSeq == joinSeq, ct)
+                    ?? throw new GroupException(GroupError.MemberNotFound);
+                if (target.UserId == userId)
+                {
+                    throw new GroupException(GroupError.CannotRemoveSelf);
+                }
+
+                var users = await directory.FindManyAsync([target.UserId], ct);
+                var name = NameOf(users, target.UserId);
+                var notices = await RemoveAsync(group, userId, target, ct);
+                return (name, notices);
             },
             ct);
 
@@ -234,6 +247,19 @@ internal sealed class EfGroupService(
             },
             ct);
         return new JoinResult(joined, await LoadDetailsAsync(groupId, ct));
+    }
+
+    // Общая часть исключения: удаление членства и уведомления (остальным, кроме исполнителя, и исключённому).
+    private async Task<List<Notice>> RemoveAsync(Group group, long executorId, GroupMember target, CancellationToken ct)
+    {
+        db.Members.Remove(target);
+        await db.SaveChangesAsync(ct);
+
+        var others = await db.Members.Where(m => m.GroupId == group.Id && m.UserId != executorId)
+            .Select(m => m.UserId).ToListAsync(ct);
+        var notices = others.Select(id => new Notice(id, NoticeKind.Left, target.UserId, group.Name)).ToList();
+        notices.Add(new Notice(target.UserId, NoticeKind.Removed, target.UserId, group.Name));
+        return notices;
     }
 
     private static bool IsRetryable(Exception? exception)

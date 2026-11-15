@@ -25,5 +25,6 @@
     <Compile Include="..\Bot.Platform.Tests\Helpers\LogCapture.cs" Link="Helpers\Shared\LogCapture.cs" />
     <Compile Include="..\Bot.Platform.Tests\Helpers\ApiCall.cs" Link="Helpers\Shared\ApiCall.cs" />
     <Compile Include="..\Bot.Platform.Tests\Helpers\TempDir.cs" Link="Helpers\Shared\TempDir.cs" />
+    <Compile Include="..\Bot.Platform.Tests\Helpers\TestUpdates.cs" Link="Helpers\Shared\TestUpdates.cs" />
   </ItemGroup>
 </Project>

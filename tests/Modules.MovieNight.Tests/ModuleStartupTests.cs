@@ -6,7 +6,7 @@ using Modules.MovieNight.Tests.Helpers;
 
 namespace Modules.MovieNight.Tests;
 
-// TEST-2: AC-1, AC-1a
+// TEST-2 (004): AC-1, AC-1a; TEST-1 (005): замена AC1a_MapBot_IsNotOverriddenByModule
 public class ModuleStartupTests
 {
     [Fact]
@@ -68,13 +68,14 @@ public class ModuleStartupTests
         Assert.Equal("movienight", new MovieNightModule().Name);
     }
 
+    // Спека 005, AC-1: часть 004 AC-1a «MapBot не переопределяется» отменена; MovieNightModule переопределяет MapBot.
     [Fact]
-    public void AC1a_MapBot_IsNotOverriddenByModule()
+    public void AC1_MapBot_IsOverriddenByModule()
     {
         var map = typeof(MovieNightModule).GetInterfaceMap(typeof(IBotModule));
         var index = Array.FindIndex(map.InterfaceMethods, m => m.Name == nameof(IBotModule.MapBot));
 
         Assert.True(index >= 0);
-        Assert.Equal(typeof(IBotModule), map.TargetMethods[index].DeclaringType);
+        Assert.Equal(typeof(MovieNightModule), map.TargetMethods[index].DeclaringType);
     }
 }

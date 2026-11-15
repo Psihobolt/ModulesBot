@@ -64,6 +64,10 @@ public interface IGroupService
 
     Task RemoveMemberAsync(long userId, Guid groupId, long memberUserId, CancellationToken ct);
 
+    /// <summary>Исключение по id членства (JoinSeq). Владелец. Возвращает displayName исключённого.</summary>
+    /// <remarks>Порядок проверок: GroupNotFound → NotOwner → MemberNotFound → CannotRemoveSelf.</remarks>
+    Task<string> RemoveMembershipAsync(long userId, Guid groupId, long joinSeq, CancellationToken ct);
+
     Task LeaveAsync(long userId, Guid groupId, CancellationToken ct);
 
     Task<InvitePreview> GetInviteAsync(long userId, string code, CancellationToken ct);
