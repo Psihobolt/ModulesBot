@@ -11,3 +11,4 @@ data/
 TestResults/
 node_modules/
 webapp/dist/
+out/
