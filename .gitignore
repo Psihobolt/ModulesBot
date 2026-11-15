@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+.DS_Store
+data/
+*.db
+*.db-shm
+*.db-wal
+TestResults/
+node_modules/
+webapp/dist/

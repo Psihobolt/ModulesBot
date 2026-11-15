@@ -1,0 +1,24 @@
+/* Fallback для открытия вне Telegram. Telegram переопределяет эти переменные своими значениями. */
+:root {
+  --tg-theme-bg-color: #ffffff;
+  --tg-theme-text-color: #000000;
+  --tg-theme-hint-color: #707579;
+  --tg-theme-link-color: #2481cc;
+  --tg-theme-button-color: #2481cc;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: #f1f1f1;
+  --tg-theme-destructive-text-color: #d32f2f;
+  color-scheme: light;
+}
+
+:root[data-color-scheme='dark'] {
+  --tg-theme-bg-color: #212121;
+  --tg-theme-text-color: #ffffff;
+  --tg-theme-hint-color: #aaaaaa;
+  --tg-theme-link-color: #8774e1;
+  --tg-theme-button-color: #8774e1;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: #181818;
+  --tg-theme-destructive-text-color: #ef5350;
+  color-scheme: dark;
+}
