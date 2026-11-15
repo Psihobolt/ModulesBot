@@ -2,8 +2,10 @@
   <Folder Name="/src/">
     <Project Path="src/Bot.Host/Bot.Host.csproj" />
     <Project Path="src/Bot.Platform/Bot.Platform.csproj" />
+    <Project Path="src/Modules/MovieNight/Modules.MovieNight.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Bot.Platform.Tests/Bot.Platform.Tests.csproj" />
+    <Project Path="tests/Modules.MovieNight.Tests/Modules.MovieNight.Tests.csproj" />
   </Folder>
 </Solution>

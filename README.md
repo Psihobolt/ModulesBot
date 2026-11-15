@@ -61,6 +61,14 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
 5. БД — SQLite `data/bot.db` (путь относительно ContentRoot Host, т.е. `src/Bot.Host/data/bot.db`), миграции применяются при старте.
    Путь меняется ключом `ConnectionStrings:Default`.
 
+## Модуль MovieNight (`src/Modules/MovieNight`)
+Этап 1: группы (создание, ссылка-приглашение, вступление, порядок участников, выход, переименование, перевыпуск
+ссылки, исключение владельцем). API — `/api/movienight`, таблицы `movienight_*` (история миграций
+`__ef_migrations_movienight`), миграции применяются при старте. Ссылки-приглашения строятся только при заданном
+`Bot:Username` (иначе `miniAppLink`/`botLink` = `null`, и в Mini App кнопка «Пригласить» скрыта); желательно задать и
+`Bot:MiniAppShortName` (см. раздел ниже). Уведомления («Петя теперь в группе…») получают только пользователи, открывавшие
+Mini App или писавшие боту.
+
 ## Ссылки на бота и Mini App (`Bot:Username`, `Bot:MiniAppShortName`)
 Нужны для ссылок-приглашений (`IDeepLinks`); без `Bot:Username` ссылки не строятся (`null`), Host стартует как обычно.
 - `Bot:Username` — имя бота **без** `@` (`^[A-Za-z][A-Za-z0-9_]{4,31}$`), видно в BotFather (`/mybots`).

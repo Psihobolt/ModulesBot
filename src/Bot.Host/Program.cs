@@ -1,6 +1,8 @@
+using Modules.MovieNight;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.AddPlatform();
-// builder.AddModule<MovieNightModule>();   // этап 1+
+builder.AddModule<MovieNightModule>();
 var app = builder.Build();
 app.MapPlatform();
 app.Run();

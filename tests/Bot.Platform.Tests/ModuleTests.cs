@@ -133,10 +133,9 @@ public class ModuleTests
     [Fact]
     public async Task AC4_HostWithoutModules_HealthReturns200OkWithoutAuth()
     {
-        await using var factory = new PlatformFactory();
-        var client = factory.CreateClient();
+        await using var host = await DemoHost.StartAsync(includeDemoModule: false);
 
-        var response = await client.GetAsync("/health");
+        var response = await host.Client.GetAsync("/health");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await ApiCall.JsonAsync(response);

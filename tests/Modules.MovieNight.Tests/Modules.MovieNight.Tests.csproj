@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Bot.Host\Bot.Host.csproj" />
+    <ProjectReference Include="..\..\src\Bot.Platform\Bot.Platform.csproj" />
+    <ProjectReference Include="..\..\src\Modules\MovieNight\Modules.MovieNight.csproj" />
+  </ItemGroup>
+  <!-- Публичные хелперы Bot.Platform.Tests подключаются исходниками (internal IBotApi/BotApiMock/BotHarness недоступны). -->
+  <ItemGroup>
+    <Compile Include="..\Bot.Platform.Tests\Helpers\TestInitData.cs" Link="Helpers\Shared\TestInitData.cs" />
+    <Compile Include="..\Bot.Platform.Tests\Helpers\FakeClock.cs" Link="Helpers\Shared\FakeClock.cs" />
+    <Compile Include="..\Bot.Platform.Tests\Helpers\LogCapture.cs" Link="Helpers\Shared\LogCapture.cs" />
+    <Compile Include="..\Bot.Platform.Tests\Helpers\ApiCall.cs" Link="Helpers\Shared\ApiCall.cs" />
+    <Compile Include="..\Bot.Platform.Tests\Helpers\TempDir.cs" Link="Helpers\Shared\TempDir.cs" />
+  </ItemGroup>
+</Project>
