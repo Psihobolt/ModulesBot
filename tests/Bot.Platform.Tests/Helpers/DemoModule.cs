@@ -24,6 +24,9 @@ public sealed class BotRecorder
 
     public System.Collections.Concurrent.ConcurrentQueue<BotStartContext> Starts { get; } = new();
 
+    /// <summary>Text replies (003 MapReply) received by demo reply handlers.</summary>
+    public System.Collections.Concurrent.ConcurrentQueue<BotReplyContext> Replies { get; } = new();
+
     /// <summary>"/list gate" blocks until this is completed (parallel-updates test).</summary>
     public TaskCompletionSource Gate { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -86,6 +89,34 @@ public sealed class DemoModule : IBotModule
         {
             ctx.Services.GetRequiredService<BotRecorder>().Callbacks.Enqueue(ctx);
             throw new InvalidOperationException("secret-boom-detail");
+        });
+        // 003: reply handlers. "name"/"other" record; "again" re-expects "name" (p2); "boom" throws.
+        bot.MapReply("name", ctx =>
+        {
+            ctx.Services.GetRequiredService<BotRecorder>().Replies.Enqueue(ctx);
+            return Task.CompletedTask;
+        });
+        bot.MapReply("other", ctx =>
+        {
+            ctx.Services.GetRequiredService<BotRecorder>().Replies.Enqueue(ctx);
+            return Task.CompletedTask;
+        });
+        bot.MapReply("again", async ctx =>
+        {
+            ctx.Services.GetRequiredService<BotRecorder>().Replies.Enqueue(ctx);
+            await ctx.Services.GetRequiredService<IBotConversation>()
+                .ExpectReplyAsync(ctx.From.Id, "demo", "name", "p2", ctx.CancellationToken);
+        });
+        bot.MapReply("boom", ctx =>
+        {
+            ctx.Services.GetRequiredService<BotRecorder>().Replies.Enqueue(ctx);
+            throw new InvalidOperationException("secret-boom-detail");
+        });
+        // 003: "demo:edit" edits the message the button is under.
+        bot.MapCallback("edit", async ctx =>
+        {
+            ctx.Services.GetRequiredService<BotRecorder>().Callbacks.Enqueue(ctx);
+            await ctx.EditAsync(new OutgoingMessage("edited"));
         });
         bot.MapStart(ctx =>
         {

@@ -11,6 +11,9 @@ public interface IBotRouteBuilder
 
     /// <summary>"/start {module}_{payload}".</summary>
     IBotRouteBuilder MapStart(BotHandler<BotStartContext> handler);
+
+    /// <summary>Обработчик текстового ответа пользователя после <see cref="IBotConversation.ExpectReplyAsync"/>.</summary>
+    IBotRouteBuilder MapReply(string action, BotHandler<BotReplyContext> handler);
 }
 
 internal sealed record CommandRoute(string Module, string Command, string Description, BotHandler<BotCommandContext> Handler);
@@ -23,6 +26,7 @@ internal sealed class BotRouteTable
     private readonly List<CommandRoute> _commands = [];
     private readonly Dictionary<string, CommandRoute> _commandsByName = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Module, string Action), BotHandler<BotCallbackContext>> _callbacks = [];
+    private readonly Dictionary<(string Module, string Action), BotHandler<BotReplyContext>> _replies = [];
     private readonly Dictionary<string, BotHandler<BotStartContext>> _starts = new(StringComparer.Ordinal);
 
     public IReadOnlyList<CommandRoute> Commands => _commands;
@@ -48,6 +52,9 @@ internal sealed class BotRouteTable
 
     public BotHandler<BotCallbackContext>? FindCallback(string module, string action) =>
         _callbacks.GetValueOrDefault((module, action));
+
+    public BotHandler<BotReplyContext>? FindReply(string module, string action) =>
+        _replies.GetValueOrDefault((module, action));
 
     public BotHandler<BotStartContext>? FindStart(string module) => _starts.GetValueOrDefault(module);
 
@@ -113,6 +120,27 @@ internal sealed class BotRouteTable
             }
 
             if (!table._callbacks.TryAdd((moduleName, action), handler))
+            {
+                throw Error(label, "action is already registered in this module");
+            }
+
+            return this;
+        }
+
+        public IBotRouteBuilder MapReply(string action, BotHandler<BotReplyContext> handler)
+        {
+            var label = $"reply '{action}'";
+            if (handler is null)
+            {
+                throw Error(label, "handler must not be null");
+            }
+
+            if (action is null || !BotNames.IsValidName(action))
+            {
+                throw Error(label, "action must match ^[a-z0-9_]{1,32}$");
+            }
+
+            if (!table._replies.TryAdd((moduleName, action), handler))
             {
                 throw Error(label, "action is already registered in this module");
             }

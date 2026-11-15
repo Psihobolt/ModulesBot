@@ -107,7 +107,7 @@ function Shell(props: {
   );
 }
 
-export type AppRouter = { router: DataRouter };
+export type AppRouter = { router: DataRouter; dispose(): void };
 
 /** Строит memory-роутер: главная, маршруты модулей, обработка start_param, режим одного модуля. */
 export function createAppRouter(opts: {
@@ -158,8 +158,15 @@ export function createAppRouter(opts: {
     initialEntries: entries,
     initialIndex: entries.length - 1,
   });
-  holder.tracker = new HistoryTracker(router, entries.length - 1);
-  return { router };
+  const tracker = new HistoryTracker(router, entries.length - 1);
+  holder.tracker = tracker;
+  return {
+    router,
+    dispose() {
+      tracker.dispose();
+      router.dispose();
+    },
+  };
 }
 
 function ShellHost(props: {

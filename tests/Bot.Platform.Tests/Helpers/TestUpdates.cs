@@ -139,7 +139,7 @@ public static class TestUpdates
 
     /// <summary>callback_query with a message in the given chat (default: private chat of the user).</summary>
     public static Update Callback(string? data, long userId = DefaultUserId, string queryId = "cq-1",
-        string chatType = "private", long? chatId = null, bool withMessage = true, string firstName = "Иван",
+        string chatType = "private", long? chatId = null, bool withMessage = true, int? messageId = null, string firstName = "Иван",
         string? lastName = "Петров", string? username = "ivan", string? languageCode = "ru", bool isPremium = true)
     {
         var query = new JsonObject
@@ -152,7 +152,11 @@ public static class TestUpdates
         if (withMessage)
         {
             query["message"] = MessageNode(chatId ?? userId, chatType, 999, "Bot", null, "the_bot", null, false,
-                n => n["text"] = "keyboard");
+                n =>
+                {
+                    n["text"] = "keyboard";
+                    if (messageId is { } id) n["message_id"] = id;
+                });
         }
 
         return Wrap("callback_query", query);

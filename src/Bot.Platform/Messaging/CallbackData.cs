@@ -52,13 +52,20 @@ public static partial class CallbackData
             return false;
         }
 
-        module = data[..first];
-        action = actionPart.ToString();
+        var moduleCandidate = data[..first];
+        var actionCandidate = actionPart.ToString();
+        if (!ModulePattern().IsMatch(moduleCandidate) || !BotNames.IsValidName(actionCandidate))
+        {
+            return false;
+        }
+
+        module = moduleCandidate;
+        action = actionCandidate;
         payload = second < 0 ? string.Empty : rest[(second + 1)..].ToString();
         return true;
     }
 
-    [GeneratedRegex("^[a-z][a-z0-9]{1,31}$")]
+    [GeneratedRegex("^[a-z][a-z0-9]{1,31}\\z")]
     private static partial Regex ModulePattern();
 }
 

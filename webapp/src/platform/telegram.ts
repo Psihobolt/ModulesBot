@@ -10,6 +10,9 @@ export interface TelegramPlatform {
   colorScheme(): ColorScheme;
   ready(): void;
   expand(): void;
+  openTelegramLink(url: string): void;
+  shareUrl(url: string, text: string): void;
+  showConfirm(message: string): Promise<boolean>;
   onThemeChanged(cb: () => void): () => void;
   mainButton: { show(p: MainButtonParams): () => void; hide(): void };
   backButton: { show(onClick: () => void): () => void; hide(): void };
@@ -43,6 +46,8 @@ interface TgWebApp {
   colorScheme: ColorScheme;
   ready(): void;
   expand(): void;
+  openTelegramLink(url: string): void;
+  showConfirm?(message: string, cb: (ok: boolean) => void): void;
   onEvent(event: 'themeChanged', cb: Handler): void;
   offEvent(event: 'themeChanged', cb: Handler): void;
   MainButton: TgMainButton;
@@ -103,6 +108,26 @@ export const telegram: TelegramPlatform = {
   },
   expand() {
     webApp()?.expand();
+  },
+  openTelegramLink(url) {
+    if (telegram.isAvailable()) webApp()?.openTelegramLink(url);
+  },
+  shareUrl(url, text) {
+    if (!telegram.isAvailable()) return;
+    webApp()?.openTelegramLink(
+      `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+    );
+  },
+  showConfirm(message) {
+    const w = webApp();
+    if (!telegram.isAvailable() || !w || typeof w.showConfirm !== 'function') return Promise.resolve(false);
+    return new Promise<boolean>((resolve) => {
+      try {
+        w.showConfirm!(message, (ok) => resolve(ok === true));
+      } catch {
+        resolve(false);
+      }
+    });
   },
   onThemeChanged(cb) {
     const w = webApp();

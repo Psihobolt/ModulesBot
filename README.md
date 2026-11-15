@@ -60,3 +60,26 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
    по умолчанию Vite отвечает «Blocked request» на чужие хосты.
 5. БД — SQLite `data/bot.db` (путь относительно ContentRoot Host, т.е. `src/Bot.Host/data/bot.db`), миграции применяются при старте.
    Путь меняется ключом `ConnectionStrings:Default`.
+
+## Ссылки на бота и Mini App (`Bot:Username`, `Bot:MiniAppShortName`)
+Нужны для ссылок-приглашений (`IDeepLinks`); без `Bot:Username` ссылки не строятся (`null`), Host стартует как обычно.
+- `Bot:Username` — имя бота **без** `@` (`^[A-Za-z][A-Za-z0-9_]{4,31}$`), видно в BotFather (`/mybots`).
+- `Bot:MiniAppShortName` — short name Mini App: в BotFather `/newapp` (при создании просят short name; список —
+  `/myapps`). Ссылка тогда `https://t.me/<бот>/<short name>?startapp=...`. Если не задан, ссылка ведёт на основное
+  Mini App бота (BotFather → бот → Bot Settings → Configure Mini App / «Main Mini App»): `https://t.me/<бот>?startapp=...`.
+- `Bot:ReplyTimeout` — срок ожидания текстового ответа пользователя (по умолчанию `00:10:00`, допустимо от 1 минуты до суток).
+```
+dotnet user-secrets set "Bot:Username" "<имя_бота>" --project src/Bot.Host
+dotnet user-secrets set "Bot:MiniAppShortName" "<short_name>" --project src/Bot.Host
+```
+
+## telegram-web-app.js
+Клиентский скрипт Telegram лежит в репозитории — `webapp/public/telegram-web-app.js` — и раздаётся нашим сервером
+(`/telegram-web-app.js`, `Cache-Control: no-cache`); Mini App не обращается к `telegram.org`. Файл обновляется вручную:
+1. скачать `https://telegram.org/js/telegram-web-app.js`;
+2. заменить `webapp/public/telegram-web-app.js`;
+3. пересобрать фронтенд (`cd webapp && npm run build`) и обновить строку ниже.
+
+Версия: в самом файле нет номера версии (константа `webAppVersion = '6.0'` — значение по умолчанию, реальную версию
+клиент сообщает в `tgWebAppVersion`; проверять `Telegram.WebApp.version` в клиенте). Дата последнего обновления файла:
+2026-11-15.

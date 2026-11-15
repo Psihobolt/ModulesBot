@@ -54,11 +54,23 @@ internal sealed partial class UpdateDispatcher(
 
         var chatId = message.Chat.Id;
         var text = message.Text;
-        if (text is null || !text.StartsWith('/'))
+        var conversation = scope.ServiceProvider.GetRequiredService<BotConversation>();
+        if (string.IsNullOrWhiteSpace(text))
         {
-            await ReplyAsync(chatId, Texts.NotACommand, ct);
+            // Нет текста или только пробелы: ожидание не потребляется (AC-7a).
+            var waiting = await conversation.HasActiveAsync(user.Id, ct);
+            await ReplyAsync(chatId, waiting ? Texts.TextOnly : Texts.NotACommand, ct);
             return;
         }
+
+        if (!text.StartsWith('/'))
+        {
+            await HandleTextAsync(update, message, user, scope.ServiceProvider, conversation, text, ct);
+            return;
+        }
+
+        // Любая команда сбрасывает ожидание ответа.
+        await conversation.CancelAsync(user.Id, ct);
 
         var match = CommandPattern().Match(text);
         if (!match.Success)
@@ -98,6 +110,38 @@ internal sealed partial class UpdateDispatcher(
             Message = message,
             Command = command,
             Arguments = arguments,
+        });
+    }
+
+    private async Task HandleTextAsync(
+        Update update,
+        Message message,
+        TelegramUser user,
+        IServiceProvider services,
+        BotConversation conversation,
+        string text,
+        CancellationToken ct)
+    {
+        var pending = await conversation.ConsumeAsync(user.Id, ct);
+        var handler = pending is null ? null : routes.FindReply(pending.Module, pending.Action);
+        if (pending is null || handler is null)
+        {
+            await ReplyAsync(message.Chat.Id, Texts.NotACommand, ct);
+            return;
+        }
+
+        await handler(new BotReplyContext
+        {
+            Update = update,
+            ChatId = message.Chat.Id,
+            From = user,
+            Services = services,
+            Sender = sender,
+            CancellationToken = ct,
+            Message = message,
+            Action = pending.Action,
+            Payload = pending.Payload,
+            Text = text.Trim(),
         });
     }
 
@@ -141,7 +185,6 @@ internal sealed partial class UpdateDispatcher(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var user = ToUser(query.From);
-        await scope.ServiceProvider.GetRequiredService<IUserRegistry>().UpsertAsync(user, true, ct);
 
         CallbackData.TryParse(query.Data, out var module, out var action, out var payload);
         var handler = module.Length > 0 ? routes.FindCallback(module, action) : null;
@@ -163,6 +206,17 @@ internal sealed partial class UpdateDispatcher(
 
         try
         {
+            try
+            {
+                await scope.ServiceProvider.GetRequiredService<IUserRegistry>().UpsertAsync(user, true, ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Кнопка не должна «висеть» из-за сбоя БД: ответ на callback уходит в finally.
+                logger.LogError(ex, "Upsert of user {UserId} failed while handling callback {UpdateId}", user.Id, update.Id);
+                return;
+            }
+
             if (handler is null)
             {
                 await context.AnswerOnceAsync(Texts.StaleButton, false);
@@ -209,5 +263,6 @@ internal static class Texts
     public const string OpenApp = "Открыть приложение";
     public const string UnknownCommand = "Не знаю такую команду. Список команд — /help";
     public const string NotACommand = "Я понимаю только команды. Список команд — /help";
+    public const string TextOnly = "Отправьте ответ текстом.";
     public const string StaleButton = "Эта кнопка больше не работает";
 }

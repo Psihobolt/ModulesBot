@@ -48,7 +48,7 @@ describe('outside Telegram (AC-20)', () => {
 
     await expectText('Откройте приложение в Telegram');
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(tg.mainVisible).toBe(false);
+    await waitFor(() => expect(tg.mainVisible).toBe(false));
   });
 
   it('AC20: outside Telegram does not call ready()/expand()', async () => {
@@ -129,8 +129,8 @@ describe('startup in Telegram (AC-21)', () => {
     okMe();
     render(<App modules={twoModules} />);
     await expectText('Привет, Иван!');
-    expect(tg.mainVisible).toBe(false);
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.mainVisible).toBe(false));
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 });
 
@@ -173,7 +173,7 @@ describe('home screen (AC-22)', () => {
     okMe();
     render(<App modules={[demoModule]} />);
     await expectText('Главная демо-модуля');
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 });
 
@@ -206,9 +206,9 @@ describe('errors (AC-23)', () => {
     render(<App modules={twoModules} />);
 
     await expectText(LOAD_ERROR);
-    expect(tg.mainVisible).toBe(true);
-    expect(tg.mainText).toBe('Повторить');
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.mainVisible).toBe(true));
+    await waitFor(() => expect(tg.mainText).toBe('Повторить'));
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 
   it('AC23: 5xx shows the load-error screen with "Повторить"', async () => {
@@ -216,14 +216,14 @@ describe('errors (AC-23)', () => {
     render(<App modules={twoModules} />);
 
     await expectText(LOAD_ERROR);
-    expect(tg.mainText).toBe('Повторить');
+    await waitFor(() => expect(tg.mainText).toBe('Повторить'));
   });
 
   it('AC23: 5xx with HTML body (no ProblemDetails) is also a load error', async () => {
     stubFetch(() => new Response('<html>502</html>', { status: 502, headers: { 'Content-Type': 'text/html' } }));
     render(<App modules={twoModules} />);
     await expectText(LOAD_ERROR);
-    expect(tg.mainText).toBe('Повторить');
+    await waitFor(() => expect(tg.mainText).toBe('Повторить'));
   });
 
   it('AC23: pressing "Повторить" repeats the request; on success shows home and hides MainButton', async () => {
@@ -240,7 +240,7 @@ describe('errors (AC-23)', () => {
     await expectText('Привет, Иван!');
     expect(fetchMock).toHaveBeenCalledTimes(2);
     await waitFor(() => expect(tg.mainVisible).toBe(false));
-    expect(tg.mainHandlerCount).toBe(0);
+    await waitFor(() => expect(tg.mainHandlerCount).toBe(0));
     expect(hasText(LOAD_ERROR)).toBe(false);
   });
 
@@ -276,13 +276,13 @@ describe('start_param routing (AC-24)', () => {
     render(<App modules={twoModules} />);
 
     await expectText('Элемент abc');
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
 
     act(() => tg.pressBack());
 
     await expectText('Привет, Иван!');
     expect(hasText('Элемент abc')).toBe(false);
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 
   it('AC24: valid start_param wins over single-module "home" shortcut', async () => {
@@ -291,7 +291,7 @@ describe('start_param routing (AC-24)', () => {
     render(<App modules={[demoModule]} />);
 
     await expectText('Элемент abc');
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
   });
 
   it.each([
@@ -310,7 +310,7 @@ describe('start_param routing (AC-24)', () => {
     await expectText('Привет, Иван!');
     await expectText(NOTICE);
     expect(hasText('Элемент')).toBe(false);
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 
   it('AC24: no start_param -> no notice', async () => {
@@ -335,16 +335,16 @@ describe('navigation (AC-26, AC-27)', () => {
     okMe();
     render(<App modules={twoModules} />);
     await expectText('Привет, Иван!');
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
 
     fireEvent.click(screen.getByText('Другой'));
     await expectText('Экран другого модуля');
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
 
     act(() => tg.pressBack());
 
     await expectText('Привет, Иван!');
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 
   it('AC26: BackButton handlers do not accumulate across navigation', async () => {
@@ -359,7 +359,7 @@ describe('navigation (AC-26, AC-27)', () => {
     fireEvent.click(screen.getByText('Другой'));
     await expectText('Экран другого модуля');
 
-    expect(tg.backHandlerCount).toBe(1);
+    await waitFor(() => expect(tg.backHandlerCount).toBe(1));
   });
 
   it('AC27: unknown in-app route shows "Страница не найдена" with MainButton "На главную"', async () => {
@@ -369,8 +369,8 @@ describe('navigation (AC-26, AC-27)', () => {
     render(<App modules={[ghost, otherModule]} />);
 
     await expectText('Страница не найдена');
-    expect(tg.mainVisible).toBe(true);
-    expect(tg.mainText).toBe('На главную');
+    await waitFor(() => expect(tg.mainVisible).toBe(true));
+    await waitFor(() => expect(tg.mainText).toBe('На главную'));
   });
 
   it('AC27: pressing "На главную" opens home and hides the MainButton', async () => {
@@ -437,14 +437,14 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
 
     await act(async () => { await router.navigate('/demo'); });
     await expectText('Главная демо-модуля');
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
 
     await act(async () => { await router.navigate('/'); });
 
     await expectText('Привет, Иван!');
     expect(router.state.historyAction).toBe('PUSH');
     await waitFor(() => expect(tg.backVisible).toBe(false));
-    expect(tg.backHandlerCount).toBe(0);
+    await waitFor(() => expect(tg.backHandlerCount).toBe(0));
   });
 
   it('AC26: after Demo -> Other (PUSH) -> home (PUSH) BackButton stays hidden on home and visible again on a module', async () => {
@@ -463,7 +463,7 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     await expectText('Главная демо-модуля');
     await act(async () => { await router.navigate('/demo/items/1'); });
     await expectText('Элемент 1');
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
 
     await act(async () => { await router.navigate('/demo'); });
 
@@ -475,7 +475,7 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     tg.setStartParam('demo_x');
     const router = renderRouter([ghostModule, otherModule], 'demo_x');
     await expectText('Страница не найдена');
-    expect(tg.backVisible).toBe(true); // история [home, notfound]
+    await waitFor(() => expect(tg.backVisible).toBe(true)); // история [home, notfound]
 
     act(() => tg.pressMain());
 
@@ -484,8 +484,8 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     expect(router.state.location.pathname).toBe('/');
     await waitFor(() => expect(tg.backVisible).toBe(false));
     await waitFor(() => expect(tg.mainVisible).toBe(false));
-    expect(tg.backHandlerCount).toBe(0);
-    expect(tg.mainHandlerCount).toBe(0);
+    await waitFor(() => expect(tg.backHandlerCount).toBe(0));
+    await waitFor(() => expect(tg.mainHandlerCount).toBe(0));
 
     // назад на NotFound вернуться нельзя: запись заменена, step back приводит на главную, не на «Страница не найдена»
     await act(async () => { await router.navigate(-1); });
@@ -498,7 +498,7 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     await expectText('Привет, Иван!');
     await act(async () => { await router.navigate('/nope'); });
     await expectText('Страница не найдена');
-    expect(tg.mainText).toBe('На главную');
+    await waitFor(() => expect(tg.mainText).toBe('На главную'));
 
     act(() => tg.pressMain());
 
@@ -514,7 +514,7 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     await expectText('Главная демо-модуля');
     await act(async () => { await router.navigate('/nope'); });
     await expectText('Страница не найдена');
-    expect(tg.mainText).toBe('На главную');
+    await waitFor(() => expect(tg.mainText).toBe('На главную'));
 
     act(() => tg.pressMain());
 
@@ -536,7 +536,7 @@ describe('single-module mode (AC-22, AC-24)', () => {
     await expectText('Главная демо-модуля');
     expect(router.state.location.pathname).toBe('/demo');
     expect(hasText('Привет, Иван!')).toBe(false);
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 
   it('AC24: unrecognized start_param with a single module opens homePath (= basePath) with the notice', async () => {
@@ -546,7 +546,7 @@ describe('single-module mode (AC-22, AC-24)', () => {
 
     await expectText('Главная демо-модуля');
     await expectText(NOTICE);
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
   });
 
   it('AC24: single-module notice disappears after the first navigation and does not come back', async () => {
@@ -579,7 +579,7 @@ describe('single-module mode (AC-22, AC-24)', () => {
   it('AC24: single module + valid deep link: history is [homePath, target], Back leads to basePath and is hidden there', async () => {
     const router = renderRouter([demoModule], 'demo_abc');
     await expectText('Элемент abc');
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
 
     act(() => tg.pressBack());
 
@@ -593,7 +593,7 @@ describe('single-module mode (AC-22, AC-24)', () => {
     const router = renderRouter([same], 'demo_x');
     await expectText('Главная демо-модуля');
     expect(hasText(NOTICE)).toBe(false);
-    expect(tg.backVisible).toBe(false);
+    await waitFor(() => expect(tg.backVisible).toBe(false));
     await act(async () => { await router.navigate(-1); });
     expect(router.state.location.pathname).toBe('/demo');
   });
@@ -607,7 +607,7 @@ describe('notice does not reappear on POP (AC-24)', () => {
     await act(async () => { await router.navigate('/demo'); });
     await expectText('Главная демо-модуля');
     expect(hasText(NOTICE)).toBe(false);
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
 
     act(() => tg.pressBack());
 
@@ -624,7 +624,7 @@ describe('notice does not reappear on POP (AC-24)', () => {
     await act(async () => { await router.navigate('/demo/items/1'); });
     await expectText('Элемент 1');
     expect(hasText(NOTICE)).toBe(false);
-    expect(tg.backVisible).toBe(true);
+    await waitFor(() => expect(tg.backVisible).toBe(true));
 
     act(() => tg.pressBack());
 

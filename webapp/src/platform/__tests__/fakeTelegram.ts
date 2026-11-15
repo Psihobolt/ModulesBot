@@ -13,6 +13,7 @@ type State = {
   initData: string;
   startParam: string | undefined;
   scheme: ColorScheme;
+  confirmResult: boolean;
 };
 
 const initialState = (): State => ({
@@ -20,6 +21,7 @@ const initialState = (): State => ({
   initData: 'query_id=AAH&user=%7B%22id%22%3A42%7D&auth_date=1&hash=abc',
   startParam: undefined,
   scheme: 'light',
+  confirmResult: true,
 });
 
 let state = initialState();
@@ -36,6 +38,9 @@ export const fakeTelegram: TelegramPlatform = {
   colorScheme: vi.fn(() => state.scheme),
   ready: vi.fn(),
   expand: vi.fn(),
+  openTelegramLink: vi.fn(),
+  shareUrl: vi.fn(),
+  showConfirm: vi.fn(async () => state.confirmResult),
   onThemeChanged: vi.fn((cb: () => void) => {
     themeListeners.add(cb);
     return () => {
@@ -87,6 +92,9 @@ export const tg = {
   setStartParam(value: string | undefined) {
     state.startParam = value;
   },
+  setConfirmResult(value: boolean) {
+    state.confirmResult = value;
+  },
   setScheme(value: ColorScheme) {
     state.scheme = value;
   },
@@ -135,5 +143,8 @@ export const tg = {
     vi.mocked(fakeTelegram.backButton.hide).mockClear();
     vi.mocked(fakeTelegram.onThemeChanged).mockClear();
     vi.mocked(fakeTelegram.isAvailable).mockClear();
+    vi.mocked(fakeTelegram.openTelegramLink).mockClear();
+    vi.mocked(fakeTelegram.shareUrl).mockClear();
+    vi.mocked(fakeTelegram.showConfirm).mockClear();
   },
 };

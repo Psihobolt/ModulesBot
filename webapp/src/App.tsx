@@ -11,6 +11,8 @@ import {
 import { telegram } from './platform/telegram';
 import { useTheme } from './platform/theme';
 
+type AppRouter = ReturnType<typeof createAppRouter>;
+
 type MeState =
   | { status: 'loading' }
   | { status: 'ready'; me: MeDto }
@@ -20,7 +22,18 @@ type MeState =
 const AUTH_CODES = new Set(['auth_expired', 'auth_invalid', 'auth_missing']);
 
 function Ready({ me, modules }: { me: MeDto; modules: WebModule[] }): ReactElement {
-  const [{ router }] = useState(() => createAppRouter({ modules, me, startParam: telegram.startParam() }));
+  const [router, setRouter] = useState<AppRouter['router'] | null>(null);
+  // Роутер создаётся в эффекте и освобождается в cleanup: двойной mount StrictMode даёт новый роутер.
+  useEffect(() => {
+    const app = createAppRouter({ modules, me, startParam: telegram.startParam() });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- роутер: внешний ресурс с dispose, создаётся только в эффекте
+    setRouter(app.router);
+    return () => {
+      app.dispose();
+      setRouter(null);
+    };
+  }, [modules, me]);
+  if (!router) return <LoadingScreen />;
   return <RouterProvider router={router} />;
 }
 

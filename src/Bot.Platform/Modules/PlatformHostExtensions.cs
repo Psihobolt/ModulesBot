@@ -40,6 +40,15 @@ public static partial class PlatformHostExtensions
             .Validate(
                 o => o.MaxRetryAfter >= TimeSpan.Zero && o.MaxRetryAfter <= TimeSpan.FromMinutes(1),
                 "Configuration key 'Bot:MaxRetryAfter' must be between 00:00:00 and 00:01:00.")
+            .Validate(
+                o => o.Username is null || UsernamePattern().IsMatch(o.Username),
+                "Configuration key 'Bot:Username' must match ^[A-Za-z][A-Za-z0-9_]{4,31}$ (without '@').")
+            .Validate(
+                o => o.MiniAppShortName is null || MiniAppShortNamePattern().IsMatch(o.MiniAppShortName),
+                "Configuration key 'Bot:MiniAppShortName' must match ^[A-Za-z0-9_]{3,30}$.")
+            .Validate(
+                o => o.ReplyTimeout >= TimeSpan.FromMinutes(1) && o.ReplyTimeout <= TimeSpan.FromDays(1),
+                "Configuration key 'Bot:ReplyTimeout' must be between 00:01:00 and 1.00:00:00.")
             .ValidateOnStart();
         services.AddOptions<AuthOptions>()
             .Bind(config.GetSection(AuthOptions.SectionName))
@@ -55,6 +64,7 @@ public static partial class PlatformHostExtensions
         BotRouteTable.GetOrAdd(services);
         services.AddSingleton<IBotApi, TelegramBotApi>();
         services.AddSingleton<IMessageSender, MessageSender>();
+        services.AddSingleton<IDeepLinks, DeepLinks>();
         services.AddSingleton<IUpdateDispatcher, UpdateDispatcher>();
         services.AddHostedService<BotSetupService>();
 
@@ -69,6 +79,8 @@ public static partial class PlatformHostExtensions
         });
 
         services.AddModuleDbContext<PlatformDbContext>(config, "platform");
+        services.AddScoped<BotConversation>();
+        services.AddScoped<IBotConversation>(sp => sp.GetRequiredService<BotConversation>());
         services.AddScoped<UserStore>();
         services.AddScoped<IUserDirectory>(sp => sp.GetRequiredService<UserStore>());
         services.AddScoped<IUserRegistry>(sp => sp.GetRequiredService<UserStore>());
@@ -166,6 +178,12 @@ public static partial class PlatformHostExtensions
         var path = string.IsNullOrWhiteSpace(configured) ? DefaultDistPath : configured;
         return Path.GetFullPath(path, app.Environment.ContentRootPath);
     }
+
+    [GeneratedRegex("^[A-Za-z][A-Za-z0-9_]{4,31}\\z")]
+    private static partial Regex UsernamePattern();
+
+    [GeneratedRegex("^[A-Za-z0-9_]{3,30}\\z")]
+    private static partial Regex MiniAppShortNamePattern();
 
     [GeneratedRegex("^[A-Za-z0-9_-]{1,256}\\z")]
     private static partial Regex WebhookSecretPattern();

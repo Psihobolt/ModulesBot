@@ -16,8 +16,8 @@ internal sealed class TelegramBotApi : IBotApi
         // Lazy: неверный формат токена не должен ронять создание сервиса до первого вызова.
         _client = new Lazy<ITelegramBotClient>(() =>
         {
-            // RetryCount = 0 выключает встроенный повтор при 429: политика повтора — только в MessageSender.
-            var clientOptions = new TelegramBotClientOptions(options.Value.Token) { RetryCount = 0 };
+            // RetryCount = 0 и RetryThreshold = 0 выключают встроенный повтор при 429: политика повтора — только в MessageSender.
+            var clientOptions = new TelegramBotClientOptions(options.Value.Token) { RetryCount = 0, RetryThreshold = 0 };
             return new TelegramBotClient(clientOptions, httpClientFactory.CreateClient(BotDefaults.HttpClientName));
         });
     }
@@ -32,6 +32,15 @@ internal sealed class TelegramBotApi : IBotApi
             cancellationToken: ct);
         return message.Id;
     }
+
+    public async Task EditMessageTextAsync(long chatId, int messageId, string text, InlineKeyboardMarkup? replyMarkup, bool html, CancellationToken ct) =>
+        await _client.Value.EditMessageText(
+            chatId,
+            messageId,
+            text,
+            parseMode: html ? ParseMode.Html : ParseMode.None,
+            replyMarkup: replyMarkup,
+            cancellationToken: ct);
 
     public async Task AnswerCallbackQueryAsync(string callbackQueryId, string? text, bool showAlert, CancellationToken ct) =>
         await _client.Value.AnswerCallbackQuery(callbackQueryId, text, showAlert, cancellationToken: ct);

@@ -1,5 +1,4 @@
 using Bot.Platform.Auth;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 
 namespace Bot.Platform.Messaging;
@@ -43,6 +42,19 @@ public sealed class BotStartContext : BotContext
     public required string Payload { get; init; }
 }
 
+public sealed class BotReplyContext : BotContext
+{
+    public required Message Message { get; init; }
+
+    public required string Action { get; init; }
+
+    /// <summary>"" если не задан.</summary>
+    public required string Payload { get; init; }
+
+    /// <summary>Текст ответа, trim по краям.</summary>
+    public required string Text { get; init; }
+}
+
 public sealed class BotCallbackContext : BotContext
 {
     private int _answered;
@@ -52,6 +64,21 @@ public sealed class BotCallbackContext : BotContext
     public required string Action { get; init; }
 
     public required string Payload { get; init; }
+
+    /// <summary>Id сообщения, под которым нажата кнопка.</summary>
+    public int? MessageId => Query.Message?.Id;
+
+    /// <summary>Редактирует сообщение, под которым нажата кнопка.</summary>
+    /// <exception cref="InvalidOperationException">У callback-запроса нет исходного сообщения (<c>Query.Message</c> равно null).</exception>
+    public Task<SendResult> EditAsync(OutgoingMessage message)
+    {
+        if (MessageId is not { } messageId)
+        {
+            throw new InvalidOperationException("The callback query has no source message to edit.");
+        }
+
+        return Sender.EditAsync(ChatId, messageId, message, CancellationToken);
+    }
 
     internal IBotApi? Api { get; init; }
 
@@ -71,7 +98,11 @@ public sealed class BotCallbackContext : BotContext
         {
             await Api.AnswerCallbackQueryAsync(Query.Id, text, showAlert, CancellationToken);
         }
-        catch (Exception ex) when (ex is ApiRequestException or RequestException or HttpRequestException)
+        catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
         {
             Logger?.LogWarning("answerCallbackQuery failed: {ErrorType}", ex.GetType().Name);
         }

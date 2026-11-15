@@ -19,6 +19,7 @@ public static class TestBot
 
     public const string UnknownCommand = "Не знаю такую команду. Список команд — /help";
     public const string NotACommand = "Я понимаю только команды. Список команд — /help";
+    public const string SendTextOnly = "Отправьте ответ текстом.";
     public const string StaleButton = "Эта кнопка больше не работает";
 
     public const string HelpBase = "Команды:\n/start — открыть приложение\n/help — список команд";
@@ -89,6 +90,8 @@ internal static class BotApiMock
 {
     public sealed record SentMessage(long ChatId, string Text, ReplyMarkup? ReplyMarkup, bool Html);
 
+    public sealed record EditedMessage(long ChatId, int MessageId, string Text, InlineKeyboardMarkup? ReplyMarkup, bool Html);
+
     public sealed record AnsweredCallback(string QueryId, string? Text, bool ShowAlert);
 
     /// <summary>SendMessageAsync returns 1, 2, 3, ...; other methods complete successfully.</summary>
@@ -99,6 +102,7 @@ internal static class BotApiMock
         api.SendMessageAsync(default, default!, default, default, default)
             .ReturnsForAnyArgs(_ => Task.FromResult(Interlocked.Increment(ref next)));
         api.AnswerCallbackQueryAsync(default!, default, default, default).ReturnsForAnyArgs(Task.CompletedTask);
+        api.EditMessageTextAsync(default, default, default!, default, default, default).ReturnsForAnyArgs(Task.CompletedTask);
         api.SetWebhookAsync(default!, default!, default!, default).ReturnsForAnyArgs(Task.CompletedTask);
         api.SetMyCommandsAsync(default!, default).ReturnsForAnyArgs(Task.CompletedTask);
         return api;
@@ -109,6 +113,13 @@ internal static class BotApiMock
             .Where(c => c.GetMethodInfo().Name == nameof(IBotApi.SendMessageAsync))
             .Select(c => c.GetArguments())
             .Select(a => new SentMessage((long)a[0]!, (string)a[1]!, (ReplyMarkup?)a[2], (bool)a[3]!))
+            .ToList();
+
+    public static IReadOnlyList<EditedMessage> Edits(this IBotApi api) =>
+        api.ReceivedCalls()
+            .Where(c => c.GetMethodInfo().Name == nameof(IBotApi.EditMessageTextAsync))
+            .Select(c => c.GetArguments())
+            .Select(a => new EditedMessage((long)a[0]!, (int)a[1]!, (string)a[2]!, (InlineKeyboardMarkup?)a[3], (bool)a[4]!))
             .ToList();
 
     public static IReadOnlyList<AnsweredCallback> Answers(this IBotApi api) =>

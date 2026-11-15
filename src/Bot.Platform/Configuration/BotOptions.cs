@@ -15,4 +15,13 @@ public sealed class BotOptions
     public bool SetupOnStartup { get; set; } = true;
 
     public TimeSpan MaxRetryAfter { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>Имя бота без "@", для ссылок t.me. Без него IDeepLinks возвращает null.</summary>
+    public string? Username { get; set; }
+
+    /// <summary>Short name Mini App из BotFather (/newapp). Без него ссылка ведёт на основное Mini App бота.</summary>
+    public string? MiniAppShortName { get; set; }
+
+    /// <summary>Срок ожидания текстового ответа пользователя (1 мин – 1 сутки).</summary>
+    public TimeSpan ReplyTimeout { get; set; } = TimeSpan.FromMinutes(10);
 }
