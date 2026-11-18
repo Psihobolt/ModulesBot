@@ -1,14 +1,50 @@
+# --- Сборка .NET ---
 bin/
 obj/
+out/
+publish/
+TestResults/
+*.binlog
+
+# --- IDE ---
 .vs/
 .idea/
 *.user
+.vscode/*
+!.vscode/extensions.json
+
+# --- ОС ---
 .DS_Store
+Thumbs.db
+
+# --- Секреты и локальная конфигурация ---
+.env
+.env.*
+*.env
+!.env.example
+!*.env.example
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.snk
+.claude/settings.local.json
+
+# --- Данные ---
 data/
 *.db
 *.db-shm
 *.db-wal
-TestResults/
+*.db-journal
+
+# --- Логи и отчёты ---
+*.log
+logs/
+coverage/
+
+# --- Frontend ---
 node_modules/
 webapp/dist/
-out/

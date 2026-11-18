@@ -60,19 +60,18 @@ Forwarded headers и HTTPS-редирект в приложении не нуж�
   ```bash
   sudo chown -R multibot:multibot /opt/multibot /var/lib/multibot
   ```
-- [ ] Файл с секретами `/etc/multibot/multibot.env`, права `600`, владелец root:
-  ```ini
-  ASPNETCORE_ENVIRONMENT=Production
-  ASPNETCORE_URLS=http://127.0.0.1:5080
-  Bot__Token=<токен тестового бота>
-  Bot__WebhookSecret=<секрет из openssl>
-  Bot__PublicUrl=https://bot-test.example.com
-  WebApp__DistPath=/opt/multibot/webapp
-  ConnectionStrings__Default=Data Source=/var/lib/multibot/bot.db
-  Logging__LogLevel__Microsoft.EntityFrameworkCore=Warning
+- [ ] Файл с секретами `/etc/multibot/multibot.env` создаётся из шаблона `deploy/multibot.env.example`
+  (заполните значения в `<…>` и адрес `Bot__PublicUrl`), права `600`, владелец root. На сервере нет клона репозитория,
+  поэтому сначала скопируйте шаблон (выполняется на машине разработчика, из корня репозитория):
+  ```bash
+  scp deploy/multibot.env.example deploy@bot-test.example.com:/tmp/multibot.env.example
+  ```
+  Затем на сервере:
+  ```bash
+  sudo install -m 600 -o root -g root /tmp/multibot.env.example /etc/multibot/multibot.env && rm /tmp/multibot.env.example
   ```
   ```bash
-  sudo chmod 600 /etc/multibot/multibot.env && sudo chown root:root /etc/multibot/multibot.env
+  sudo nano /etc/multibot/multibot.env
   ```
 - [ ] systemd-юнит `/etc/systemd/system/multibot.service`:
   ```ini

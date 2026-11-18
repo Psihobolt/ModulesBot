@@ -24,6 +24,8 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
 1a. Context7: получите ключ на context7.com (без ключа работает, но с жёсткими лимитами), задайте
     переменную окружения `CONTEXT7_API_KEY`. При первом запуске `claude` подтвердите сервер из `.mcp.json`,
     проверьте `/mcp` — `context7` должен быть `connected`.
+    Вместо переменной окружения ключ можно положить в `.claude/settings.local.json` (`env.CONTEXT7_API_KEY`) —
+    файл игнорируется git.
     Важно: сервер должен называться именно `context7` — от этого зависят имена инструментов
     `mcp__context7__*` в агентах. Если ставите Context7 как плагин, имена будут другими — поправьте строку
     `tools:` в агентах или просто удалите её (тогда агент получит все инструменты сессии).
@@ -60,6 +62,33 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
    по умолчанию Vite отвечает «Blocked request» на чужие хосты.
 5. БД — SQLite `data/bot.db` (путь относительно ContentRoot Host, т.е. `src/Bot.Host/data/bot.db`), миграции применяются при старте.
    Путь меняется ключом `ConnectionStrings:Default`.
+
+## Секреты и конфигурация
+Секреты не хранятся в репозитории: ни в коде, ни в `appsettings*.json`, ни в документации. Локально — user-secrets или
+переменные окружения, на сервере — `/etc/multibot/multibot.env` (шаблон — `deploy/multibot.env.example`, права 600).
+
+| Ключ | Секрет | Локально | Сервер |
+|---|---|---|---|
+| `Bot:Token` | да | user-secrets / переменная `Bot__Token` | да (`Bot__Token`) |
+| `Bot:WebhookSecret` | да | user-secrets / переменная `Bot__WebhookSecret` | да (`Bot__WebhookSecret`) |
+| `Bot:PublicUrl` | нет | user-secrets / переменная `Bot__PublicUrl` | да (`Bot__PublicUrl`) |
+| `Bot:Username` | нет | user-secrets / переменная `Bot__Username` | нет |
+| `Bot:MiniAppShortName` | нет | user-secrets / переменная `Bot__MiniAppShortName` | нет |
+| `Bot:SetupOnStartup` | нет | user-secrets / переменная `Bot__SetupOnStartup` | нет |
+| `Bot:ReplyTimeout` | нет | user-secrets / переменная `Bot__ReplyTimeout` | нет |
+| `WebApp:DistPath` | нет | переменная `WebApp__DistPath` (по умолчанию `webapp/dist`) | да (`WebApp__DistPath`) |
+| `ConnectionStrings:Default` | нет | переменная `ConnectionStrings__Default` (по умолчанию `data/bot.db`) | да (`ConnectionStrings__Default`) |
+| `CONTEXT7_API_KEY` | да | переменная окружения или `.claude/settings.local.json` (`env.CONTEXT7_API_KEY`); только для разработки агентами | нет |
+| `ASPNETCORE_ENVIRONMENT` | нет | не требуется | да (`ASPNETCORE_ENVIRONMENT`) |
+| `ASPNETCORE_URLS` | нет | `launchSettings.json` | да (`ASPNETCORE_URLS`) |
+| `Logging__LogLevel__Microsoft.EntityFrameworkCore` | нет | `appsettings*.json` | да (`Logging__LogLevel__Microsoft.EntityFrameworkCore`) |
+
+- Переменные `VITE_*` попадают в клиентский бандл — секреты в них запрещены.
+- При утечке: токен бота — BotFather `/revoke`; секрет webhook — новый `openssl rand -hex 32` и перезапуск сервиса;
+  ключ Context7 — перевыпуск на context7.com.
+- Автотест-сканер секретов (`tests/Bot.Platform.Tests/RepositoryHygiene/`) входит в `dotnet test`; отдельно:
+  `dotnet test --filter RepositoryHygiene` (все 116 тестов гигиены), сканер секретов отдельно —
+  `dotnet test --filter "FullyQualifiedName~RepositorySecretsTests"`.
 
 ## Модуль MovieNight (`src/Modules/MovieNight`)
 Этап 1: группы (создание, ссылка-приглашение, вступление, порядок участников, выход, переименование, перевыпуск
