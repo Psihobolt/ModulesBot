@@ -1,0 +1,10 @@
+[Unit]
+Description=MultiBot: забрать и выкатить последний релиз из GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/multibot-update
+TimeoutStartSec=15min
+Nice=10

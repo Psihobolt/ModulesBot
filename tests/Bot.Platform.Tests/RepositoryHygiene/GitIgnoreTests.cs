@@ -1,11 +1,12 @@
 namespace Bot.Platform.Tests.RepositoryHygiene;
 
-/// <summary>AC-1/AC-2: .gitignore. Глобальные исключения пользователя нейтрализованы в GitRepo.</summary>
+/// <summary>006 AC-1/AC-2 + 008 AC-2: .gitignore. Глобальные исключения пользователя нейтрализованы в GitRepo.</summary>
 public class GitIgnoreTests
 {
     public static TheoryData<string> IgnoredPaths =>
     [
-        ".claude/settings.local.json", ".env", ".env.local", ".env.production", "deploy/multibot.env", "foo.env",
+        ".claude/settings.local.json", ".env", ".env.local", ".env.production", "deploy/multibot.env", "deploy/server/multibot.env",
+        "deploy/server/updater.env", "foo.env",
         "src/Bot.Host/appsettings.Local.json", "src/Bot.Host/appsettings.Development.local.json", "secrets.json",
         "certs/server.pfx", "certs/server.p12", "certs/server.pem", "certs/server.key", "keys/strong.snk",
         "msbuild.binlog", "logs/app.log", "npm-debug.log", "coverage/index.html", ".vscode/settings.json",
@@ -16,7 +17,9 @@ public class GitIgnoreTests
     public static TheoryData<string> NotIgnoredPaths =>
     [
         ".gitignore", ".mcp.json", "src/Bot.Host/appsettings.json", "src/Bot.Host/Properties/launchSettings.json",
-        "deploy/multibot.env.example", ".env.example", "webapp/.env.example", ".vscode/extensions.json",
+        "deploy/server/multibot.env.example", "deploy/server/updater.env.example",
+        "deploy/server/multibot-update.sh", "deploy/server/multibot-update.service",
+        "deploy/server/multibot-update.timer", ".env.example", "webapp/.env.example", ".vscode/extensions.json",
         ".claude/settings.json", ".claude/agents/architect.md", "webapp/public/telegram-web-app.js",
         "webapp/package-lock.json",
     ];

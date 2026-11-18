@@ -66,7 +66,7 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
 
 ## Секреты и конфигурация
 Секреты не хранятся в репозитории: ни в коде, ни в `appsettings*.json`, ни в документации. Локально — user-secrets или
-переменные окружения, на сервере — `/etc/multibot/multibot.env` (шаблон — `deploy/multibot.env.example`, права 600).
+переменные окружения, на сервере — `/etc/multibot/multibot.env` (шаблон — `deploy/server/multibot.env.example`, права 600).
 
 | Ключ | Секрет | Локально | Сервер |
 |---|---|---|---|
@@ -82,8 +82,9 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
 | `CONTEXT7_API_KEY` | да | переменная окружения или `.claude/settings.local.json` (`env.CONTEXT7_API_KEY`); только для разработки агентами | нет |
 | `ASPNETCORE_ENVIRONMENT` | нет | не требуется | да (`ASPNETCORE_ENVIRONMENT`) |
 | `ASPNETCORE_URLS` | нет | `launchSettings.json` | да (`ASPNETCORE_URLS`) |
-| `Logging__LogLevel__Microsoft.EntityFrameworkCore` | нет | `appsettings*.json` | да (`Logging__LogLevel__Microsoft.EntityFrameworkCore`) |
+| `Logging:LogLevel:Microsoft.EntityFrameworkCore` | нет | `appsettings.json` (`Warning`) | нет |
 
+- Автообновление сервера — `/etc/multibot/updater.env` (шаблон `deploy/server/updater.env.example`, права 600, владелец root); `GITHUB_TOKEN` — секрет, нужен только для приватного репозитория (fine-grained, Contents: Read-only).
 - Переменные `VITE_*` попадают в клиентский бандл — секреты в них запрещены.
 - При утечке: токен бота — BotFather `/revoke`; секрет webhook — новый `openssl rand -hex 32` и перезапуск сервиса;
   ключ Context7 — перевыпуск на context7.com.
@@ -100,7 +101,8 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
   проверки — `build`.
 - `release` (`.github/workflows/release.yml`): только вручную из ветки `main` — Actions → release → Run workflow,
   версия `vX.Y.Z`. Прогоняет `ci`, собирает self-contained архив `linux-x64` (`multibot.tar.gz` + `.sha256`) и
-  публикует GitHub Release. Развёртывание на сервере — вручную: `DEPLOY_CHECKLIST.md`, раздел «Релиз из GitHub».
+  публикует GitHub Release. Развёртывание — автоматическое: сервер примерно раз в 5 минут забирает последний релиз
+  (`deploy/server/multibot-update.sh`), при неудаче откатывается; см. `DEPLOY_CHECKLIST.md`, раздел «Релиз из GitHub».
 
 Ручные настройки GitHub (кодом не задаются, делает владелец репозитория):
 1. **Ruleset для `main`** (Settings → Rules → Rulesets → New branch ruleset, target: default branch, Enforcement:
