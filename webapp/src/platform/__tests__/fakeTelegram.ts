@@ -1,4 +1,5 @@
-import { vi } from 'vitest';
+import { act, waitFor } from '@testing-library/react';
+import { expect, vi } from 'vitest';
 import type { ColorScheme, MainButtonParams, TelegramPlatform } from '../telegram';
 
 /**
@@ -148,3 +149,24 @@ export const tg = {
     vi.mocked(fakeTelegram.showConfirm).mockClear();
   },
 };
+
+/**
+ * Нажатие MainButton только после того, как обработчик реально зарегистрирован (и, если задан, показан нужный текст).
+ * Без ожидания нажатие сразу после появления экрана может уйти «в пустоту» (эффект регистрации ещё не выполнен).
+ */
+export async function pressMainWhenReady(text?: string): Promise<void> {
+  await waitFor(() => {
+    if (text !== undefined) expect(tg.mainText).toBe(text);
+    expect(tg.mainHandlerCount).toBeGreaterThan(0);
+  });
+  act(() => tg.pressMain());
+}
+
+/** Нажатие BackButton после регистрации обработчика. */
+export async function pressBackWhenReady(): Promise<void> {
+  await waitFor(() => {
+    expect(tg.backVisible).toBe(true);
+    expect(tg.backHandlerCount).toBeGreaterThan(0);
+  });
+  act(() => tg.pressBack());
+}

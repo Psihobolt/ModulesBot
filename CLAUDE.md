@@ -66,8 +66,22 @@ docs/
 - Максимум 3 круга «critic → исправление», дальше — к пользователю.
 - Preflight перед `/feature`: Context7 отвечает, `dotnet build -warnaserror` проходит на текущем состоянии.
   Сбой окружения (ключ Context7, NuGet-фид) решается до реализации, а не обходом флагов в агентах.
+- Git — только через ветку задачи и pull request, см. «Ветки и pull request».
 - Одна спецификация за раз: следующая пишется после `DONE` предыдущей (иначе её дорого сверять с кодом).
 - Отклонения от текста спеки разработчики не решают сами: поле `DEVIATIONS`/`ISSUES` → architect.
+
+## Ветки и pull request
+- `main` защищена: коммиты, `push` и `push --force` в `main` запрещены. Изменения попадают в `main` только через
+  pull request с зелёной проверкой CI `build` (`.github/workflows/ci.yml`).
+- Одна спецификация = одна ветка = один PR. Ветка — от коммита, который уже есть в `origin/main`; имя
+  `<type>/<NNN>-<slug>` (`feat/008-movienight-groups-app`, `chore/007-ci-release-pr-process`), без спеки — `<type>/<slug>`.
+- Коммит, push ветки и создание PR (`gh pr create`; без `gh` — ссылка из вывода `git push`) — только по команде
+  пользователя, их выполняет оркестратор. Merge PR — только пользователь в GitHub, способом squash merge (заголовок
+  PR в Conventional Commits = коммит в `main`); агенты PR не мержат и не одобряют.
+- Переписывать историю (`--force-with-lease`) можно только в своей ветке задачи до merge; `main` — никогда.
+- Субагенты git не меняют: `commit`, `push`, `merge`, `rebase`, `reset`, `switch`/`checkout`, `branch`, `tag`,
+  `stash`, `gh pr …` запрещены; чтение (`status`, `diff`, `log`, `show`) разрешено.
+- Команды CI = раздел «Команды». Меняете команды — меняйте и `ci.yml` (сверяет тест `WorkflowTests`).
 
 ## Команды
 - Backend: `dotnet build -warnaserror`, `dotnet test --nologo`, `dotnet format --verify-no-changes`

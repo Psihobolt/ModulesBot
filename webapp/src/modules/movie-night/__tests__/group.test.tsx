@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeTelegram, tg } from '../../../platform/__tests__/fakeTelegram';
+import { fakeTelegram, pressMainWhenReady, tg } from '../../../platform/__tests__/fakeTelegram';
 import { deferred, expectText, hasText, jsonResponse } from '../../../platform/__tests__/testUtils';
 import { LINK, groupsList, makeGroup, mockApi, problem, renderAt } from './helpers';
 
@@ -63,7 +63,7 @@ describe('"Группа" для участника (AC-25)', () => {
     await expectText('Участники');
     await waitFor(() => expect(tg.mainText).toBe('Пригласить'));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     expect(fakeTelegram.shareUrl).toHaveBeenCalledWith(LINK, 'Присоединяйся к группе «Мы с Петей» в Киновечере');
   });
@@ -155,7 +155,7 @@ describe('"Группа" для участника (AC-25)', () => {
 
     await expectText('Группа не найдена');
     await waitFor(() => expect(tg.mainText).toBe('К моим группам'));
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/movienight'));
     expect(router.state.historyAction).toBe('REPLACE');
@@ -222,7 +222,7 @@ describe('"Группа" для владельца (AC-26)', () => {
     await expectText('Создана новая ссылка');
     expect(fakeTelegram.showConfirm).toHaveBeenCalledWith('Старая ссылка перестанет работать. Создать новую?');
     expect(api.count('POST', '/movienight/groups/g1/invite')).toBe(1);
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     expect(fakeTelegram.shareUrl).toHaveBeenCalledWith(newLink, expect.any(String));
   });
 

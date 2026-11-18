@@ -1,0 +1,79 @@
+# CI: сборка и все проверки проекта.
+# Запускается на PR в main, на push в main (после merge), вручную (workflow_dispatch)
+# и вызовом из release.yml перед сборкой релиза.
+# Ветки проверяются через PR; ранняя проверка ветки без PR — workflow_dispatch.
+# Имя проверки для правил ветки main: build
+
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+# В вызываемом workflow github.event_name, github.ref и github.sha — от вызывающего (release: workflow_dispatch),
+# github.workflow внутри вызова = «release»; группа всегда начинается с «ci-» и не может совпасть
+# с группой релиза («release»).
+# Ключ группы: у push — SHA коммита, у остальных событий — ref (у pull_request это refs/pull/<N>/merge,
+# общий для всех обновлений PR). Для push группа на коммит: в группе максимум один ожидающий прогон,
+# и новый вытеснил бы ожидающий прогон предыдущего коммита main независимо от cancel-in-progress.
+# Отменяем только устаревшие прогоны PR; проверка merge-коммита в main не отменяется.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Линтер workflow (actionlint)
+        run: |
+          docker run --rm -v "${PWD}:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Backend — сборка, тесты, формат
+        run: |
+          dotnet build -warnaserror
+          dotnet test --nologo
+          dotnet format --verify-no-changes
+
+      - name: Mini App — сборка, тесты, линтер
+        working-directory: webapp
+        run: |
+          npm ci
+          npm run build
+          npm run test -- --run
+          npm run lint
+
+      - name: Mini App — без внешних адресов
+        run: |
+          found=$(grep -oE 'https?://[^"'"'"' )]+' webapp/dist/index.html | sort -u || true)
+          if [ -n "$found" ]; then
+            echo "::error::index.html ссылается на внешние адреса:"
+            echo "$found"
+            exit 1
+          fi
