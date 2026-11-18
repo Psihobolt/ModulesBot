@@ -130,6 +130,41 @@ Forwarded headers и HTTPS-редирект в приложении не нуж�
   ```
   Проверка автопродления: `sudo certbot renew --dry-run`.
 
+## Релиз из GitHub
+
+Готовый архив собирает workflow `release` (self-contained `linux-x64`); §3 ниже — ручной путь (в том числе для ARM).
+
+- [ ] Выпустить релиз: GitHub → Actions → release → Run workflow, ветка `main`, версия `vX.Y.Z`. Дождаться зелёного
+  запуска; в Releases появятся `multibot.tar.gz` и `multibot.tar.gz.sha256`.
+- [ ] На сервере скачать архив и контрольную сумму (публичный репозиторий — без токена) и проверить:
+  ```bash
+  cd /tmp && curl -fLO https://github.com/Psihobolt/ModulesBot/releases/download/vX.Y.Z/multibot.tar.gz && curl -fLO https://github.com/Psihobolt/ModulesBot/releases/download/vX.Y.Z/multibot.tar.gz.sha256
+  ```
+  ```bash
+  sha256sum -c multibot.tar.gz.sha256
+  ```
+- [ ] Распаковать во временный каталог:
+  ```bash
+  rm -rf /tmp/multibot-release && mkdir /tmp/multibot-release && tar -C /tmp/multibot-release -xzf multibot.tar.gz
+  ```
+- [ ] Остановить сервис, сохранить текущую версию и выложить новую:
+  ```bash
+  sudo systemctl stop multibot
+  ```
+  ```bash
+  sudo rm -rf /opt/multibot/app.prev && sudo cp -a /opt/multibot/app /opt/multibot/app.prev
+  ```
+  ```bash
+  sudo rsync -a --delete /tmp/multibot-release/app/ /opt/multibot/app/ && sudo rsync -a --delete /tmp/multibot-release/webapp/ /opt/multibot/webapp/
+  ```
+  ```bash
+  sudo chown -R multibot:multibot /opt/multibot && sudo systemctl start multibot
+  ```
+- [ ] Проверка — §4.
+
+Архив self-contained `linux-x64`: в unit должен быть `ExecStart=/opt/multibot/app/Bot.Host` (вариант Б из §2),
+.NET runtime на сервере не нужен. Для ARM-сервера — только ручной путь §3 (`linux-arm64`).
+
 ## 3. Сборка и публикация (каждый релиз, на машине разработчика)
 
 - [ ] Рабочая копия чистая, все проверки зелёные:

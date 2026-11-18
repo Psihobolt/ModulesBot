@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RouterProvider } from 'react-router/dom';
 import { App } from '../../App';
 import { createAppRouter, type WebModule } from '../router';
-import { tg } from './fakeTelegram';
+import { pressBackWhenReady, pressMainWhenReady, tg } from './fakeTelegram';
 import {
   ME,
   deferred,
@@ -98,7 +98,7 @@ describe('startup in Telegram (AC-21)', () => {
 
     render(<App modules={twoModules} />);
     await expectText(LOAD_ERROR);
-    act(() => tg.pressMain());
+    await pressMainWhenReady('Повторить');
     await expectText('Привет, Иван!');
 
     expect(telegram.ready).toHaveBeenCalledTimes(1);
@@ -195,7 +195,7 @@ describe('errors (AC-23)', () => {
     const fetchMock = stubFetch(() => problemResponse(401, 'auth_expired'));
     render(<App modules={twoModules} />);
     await expectText(SESSION_EXPIRED);
-    act(() => tg.pressMain());
+    act(() => tg.pressMain()); // кнопки нет намеренно: нажатие не должно ничего вызвать
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -235,7 +235,7 @@ describe('errors (AC-23)', () => {
     render(<App modules={twoModules} />);
     await expectText(LOAD_ERROR);
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady('Повторить');
 
     await expectText('Привет, Иван!');
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -249,7 +249,7 @@ describe('errors (AC-23)', () => {
     render(<App modules={twoModules} />);
     await expectText(LOAD_ERROR);
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady('Повторить');
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
 
     await expectText(LOAD_ERROR);
@@ -262,7 +262,7 @@ describe('errors (AC-23)', () => {
     render(<App modules={twoModules} />);
     await expectText(LOAD_ERROR);
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady('Повторить');
 
     await expectText(SESSION_EXPIRED);
     await waitFor(() => expect(tg.mainVisible).toBe(false));
@@ -278,7 +278,7 @@ describe('start_param routing (AC-24)', () => {
     await expectText('Элемент abc');
     await waitFor(() => expect(tg.backVisible).toBe(true));
 
-    act(() => tg.pressBack());
+    await pressBackWhenReady();
 
     await expectText('Привет, Иван!');
     expect(hasText('Элемент abc')).toBe(false);
@@ -341,7 +341,7 @@ describe('navigation (AC-26, AC-27)', () => {
     await expectText('Экран другого модуля');
     await waitFor(() => expect(tg.backVisible).toBe(true));
 
-    act(() => tg.pressBack());
+    await pressBackWhenReady();
 
     await expectText('Привет, Иван!');
     await waitFor(() => expect(tg.backVisible).toBe(false));
@@ -354,7 +354,7 @@ describe('navigation (AC-26, AC-27)', () => {
 
     fireEvent.click(screen.getByText('Демо'));
     await expectText('Главная демо-модуля');
-    act(() => tg.pressBack());
+    await pressBackWhenReady();
     await expectText('Привет, Иван!');
     fireEvent.click(screen.getByText('Другой'));
     await expectText('Экран другого модуля');
@@ -380,7 +380,7 @@ describe('navigation (AC-26, AC-27)', () => {
     render(<App modules={[ghost, otherModule]} />);
     await expectText('Страница не найдена');
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Привет, Иван!');
     await waitFor(() => expect(tg.mainVisible).toBe(false));
@@ -477,7 +477,7 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     await expectText('Страница не найдена');
     await waitFor(() => expect(tg.backVisible).toBe(true)); // история [home, notfound]
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Привет, Иван!');
     expect(router.state.historyAction).toBe('REPLACE');
@@ -500,7 +500,7 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     await expectText('Страница не найдена');
     await waitFor(() => expect(tg.mainText).toBe('На главную'));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Привет, Иван!');
     expect(router.state.historyAction).toBe('REPLACE');
@@ -516,7 +516,7 @@ describe('home = homePath, Back/Main buttons (AC-26, AC-27)', () => {
     await expectText('Страница не найдена');
     await waitFor(() => expect(tg.mainText).toBe('На главную'));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Главная демо-модуля');
     expect(router.state.historyAction).toBe('REPLACE');
@@ -581,7 +581,7 @@ describe('single-module mode (AC-22, AC-24)', () => {
     await expectText('Элемент abc');
     await waitFor(() => expect(tg.backVisible).toBe(true));
 
-    act(() => tg.pressBack());
+    await pressBackWhenReady();
 
     await expectText('Главная демо-модуля');
     expect(router.state.location.pathname).toBe('/demo');
@@ -609,7 +609,7 @@ describe('notice does not reappear on POP (AC-24)', () => {
     expect(hasText(NOTICE)).toBe(false);
     await waitFor(() => expect(tg.backVisible).toBe(true));
 
-    act(() => tg.pressBack());
+    await pressBackWhenReady();
 
     await expectText('Привет, Иван!');
     expect(router.state.historyAction).toBe('POP');
@@ -626,7 +626,7 @@ describe('notice does not reappear on POP (AC-24)', () => {
     expect(hasText(NOTICE)).toBe(false);
     await waitFor(() => expect(tg.backVisible).toBe(true));
 
-    act(() => tg.pressBack());
+    await pressBackWhenReady();
 
     await expectText('Главная демо-модуля');
     expect(router.state.historyAction).toBe('POP');

@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { tg } from '../../../platform/__tests__/fakeTelegram';
+import { pressMainWhenReady, tg } from '../../../platform/__tests__/fakeTelegram';
 import { deferred, expectText, hasText, jsonResponse } from '../../../platform/__tests__/testUtils';
 import { lastMain, mockApi, problem, renderAt } from './helpers';
 
@@ -59,7 +59,7 @@ describe('"Мои группы" (AC-23)', () => {
     const router = renderAt('/movienight');
     await expectText('У вас пока нет групп');
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/movienight/groups/new'));
   });
@@ -113,7 +113,7 @@ describe('общие состояния (AC-30)', () => {
 
     await expectText('Не удалось загрузить данные.');
     await waitFor(() => expect(tg.mainText).toBe('Повторить'));
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Киноклуб');
     expect(api.count('GET', '/movienight/groups')).toBe(2);
@@ -176,10 +176,10 @@ describe('"Новая группа" (AC-24)', () => {
     fireEvent.change(input(), { target: { value: '  Мы с Петей  ' } });
     await waitFor(() => expect(mainEnabled()).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     await waitFor(() => expect(lastMain()?.loading).toBe(true));
-    act(() => tg.pressMain());
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
+    await pressMainWhenReady();
     expect(api.count('POST', '/movienight/groups')).toBe(1);
     expect(api.calls.find((c) => c.method === 'POST')?.body).toEqual({ name: '  Мы с Петей  ' });
 
@@ -201,7 +201,7 @@ describe('"Новая группа" (AC-24)', () => {
     fireEvent.change(input(), { target: { value: 'a' } });
     await waitFor(() => expect(mainEnabled()).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Название — от 1 до 64 символов, без переводов строк.');
     await waitFor(() => expect(lastMain()?.loading).toBeFalsy());
@@ -215,7 +215,7 @@ describe('"Новая группа" (AC-24)', () => {
     fireEvent.change(input(), { target: { value: 'a' } });
     await waitFor(() => expect(mainEnabled()).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Можно состоять не больше чем в 20 группах.');
   });
@@ -234,7 +234,7 @@ describe('"Новая группа" (AC-24)', () => {
     fireEvent.change(input(), { target: { value: 'a' } });
     await waitFor(() => expect(mainEnabled()).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Не удалось сохранить. Попробуйте ещё раз.');
   });
@@ -248,10 +248,10 @@ describe('"Новая группа" (AC-24)', () => {
     const router = renderAt('/movienight/groups/new');
     fireEvent.change(input(), { target: { value: 'a' } });
     await waitFor(() => expect(mainEnabled()).toBe(true));
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     await expectText('Не удалось сохранить');
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/movienight/groups/z'));
     expect(api.count('POST', '/movienight/groups')).toBe(2);

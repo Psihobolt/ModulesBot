@@ -1,9 +1,9 @@
-import { act, cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, render, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../App';
 import { createAppRouter } from '../router';
-import { tg } from './fakeTelegram';
+import { pressBackWhenReady, tg } from './fakeTelegram';
 import { ME, demoModule, expectText, jsonResponse, stubFetch } from './testUtils';
 
 vi.mock('../telegram', async () => ({ telegram: (await import('./fakeTelegram')).fakeTelegram }));
@@ -111,7 +111,7 @@ describe('StrictMode double mount (FE-2)', () => {
     await waitFor(() => expect(tg.backVisible).toBe(true));
     await waitFor(() => expect(tg.backHandlerCount).toBe(1));
 
-    act(() => tg.pressBack());
+    await pressBackWhenReady();
 
     await expectText('Привет, Иван!');
     await waitFor(() => expect(tg.backVisible).toBe(false));

@@ -32,7 +32,8 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
 2. Заполните таблицу ответов в `docs/product/movie-night.md`.
 3. Создайте двух ботов в BotFather (рабочий и тестовый), для тестового — `/newapp`.
 4. `claude` → `/agents` (должно быть 5) → `/feature Этап 0 из docs/product/movie-night.md: каркас платформы без модулей`.
-5. Дальше — этапы 1–4 по одному, после каждого проверяйте вручную в Telegram и коммитьте.
+5. Дальше — этапы 1–4 по одному, после каждого проверяйте вручную в Telegram; изменения — через ветку и PR (см. `CLAUDE.md`,
+   «Ветки и pull request»).
 
 ## Если меняете стек фронтенда
 Замените React/Vite в `CLAUDE.md`, `frontend-developer.md`, `tester.md` (Vitest) и команды сборки.
@@ -87,8 +88,34 @@ docs/tasks/_TEMPLATE.md                — шаблон спецификации
 - При утечке: токен бота — BotFather `/revoke`; секрет webhook — новый `openssl rand -hex 32` и перезапуск сервиса;
   ключ Context7 — перевыпуск на context7.com.
 - Автотест-сканер секретов (`tests/Bot.Platform.Tests/RepositoryHygiene/`) входит в `dotnet test`; отдельно:
-  `dotnet test --filter RepositoryHygiene` (все 116 тестов гигиены), сканер секретов отдельно —
+  `dotnet test --filter RepositoryHygiene` (тесты гигиены), сканер секретов отдельно —
   `dotnet test --filter "FullyQualifiedName~RepositorySecretsTests"`.
+
+## CI, ветки и релизы
+- `main` защищена: изменения попадают в неё только через pull request (squash merge) с зелёной проверкой `build`.
+  Правила — `CLAUDE.md`, «Ветки и pull request».
+- `ci` (`.github/workflows/ci.yml`): запускается на PR в `main`, push в `main`, вручную и из `release`. Job `build`:
+  actionlint, `dotnet build -warnaserror`, `dotnet test --nologo`, `dotnet format --verify-no-changes`,
+  `npm ci`/`build`/`test`/`lint` в `webapp`, проверка отсутствия внешних адресов в `index.html`. Имя обязательной
+  проверки — `build`.
+- `release` (`.github/workflows/release.yml`): только вручную из ветки `main` — Actions → release → Run workflow,
+  версия `vX.Y.Z`. Прогоняет `ci`, собирает self-contained архив `linux-x64` (`multibot.tar.gz` + `.sha256`) и
+  публикует GitHub Release. Развёртывание на сервере — вручную: `DEPLOY_CHECKLIST.md`, раздел «Релиз из GitHub».
+
+Ручные настройки GitHub (кодом не задаются, делает владелец репозитория):
+1. **Ruleset для `main`** (Settings → Rules → Rulesets → New branch ruleset, target: default branch, Enforcement:
+   Active, bypass list — пустой): Restrict deletions; Block force pushes; Require a pull request before merging
+   (required approvals = 0 — разработчик один; при появлении второго — 1); Require status checks to pass → `build`
+   (Require branches to be up to date — вкл.); Require linear history. Для приватного репозитория на бесплатном
+   плане rulesets не применяются — тогда правило держится только процессом.
+2. **Settings → General → Pull Requests:** оставить только «Allow squash merging» (default commit message — «Pull
+   request title»), выключить merge commits и rebase merging; включить «Automatically delete head branches».
+3. **Settings → Actions → General:** Workflow permissions = «Read repository contents and packages permissions»;
+   выключить «Allow GitHub Actions to create and approve pull requests»; Fork PR workflows — «Require approval for
+   all outside collaborators».
+4. **Settings → Environments → New environment `release`:** Deployment branches and tags → Selected branches →
+   `main`. Секретов не требуется (публикация — `GITHUB_TOKEN`).
+5. Проверка: после первого PR в Rulesets → Insights видно, что прямой push в `main` отклонён.
 
 ## Модуль MovieNight (`src/Modules/MovieNight`)
 Этап 1: группы (создание, ссылка-приглашение, вступление, порядок участников, выход, переименование, перевыпуск

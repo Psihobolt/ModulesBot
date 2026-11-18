@@ -27,6 +27,9 @@ model: opus
    middleware, настройка Vite). Устаревший или несуществующий для нашей версии API — MAJOR.
 9. Запусти сам: `dotnet build -warnaserror`, `dotnet test --nologo`,
    `cd webapp && npm run build && npm run lint && npm run test -- --run`.
+10. **Ветка**: изменения задачи — в ветке задачи, не в `main`
+    (`git branch --show-current`); ревьюй полный объём `git diff origin/main...HEAD` + незакоммиченное (`git status`).
+    Работа в `main` — BLOCKER `[critic/process]`.
 
 ## Дисциплина ревью (по итогам ретроспективы Этапов 0–1)
 - **Круг 1 — полный.** Выдай ВСЕ находки сразу. Дефект, найденный в круге 2+ и существовавший в круге 1,

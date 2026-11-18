@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeTelegram, tg } from '../../../platform/__tests__/fakeTelegram';
+import { fakeTelegram, pressMainWhenReady, tg } from '../../../platform/__tests__/fakeTelegram';
 import { deferred, expectText, hasText, jsonResponse } from '../../../platform/__tests__/testUtils';
 import { groupsList, lastMain, makeGroup, mockApi, problem, renderAt } from './helpers';
 
@@ -39,9 +39,9 @@ describe('"Вступление" (AC-28)', () => {
     const router = renderAt('/movienight', JOIN);
     await expectText('Приглашение в группу');
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     await waitFor(() => expect(lastMain()?.loading).toBe(true));
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     expect(api.count('POST', '/movienight/invites/AB12cd34EF/join')).toBe(1);
     await act(async () => {
       pending.resolve(jsonResponse({ joined: true, group: makeGroup(1) }));
@@ -61,7 +61,7 @@ describe('"Вступление" (AC-28)', () => {
 
     await expectText('Вы уже в этой группе');
     await waitFor(() => expect(tg.mainText).toBe('Открыть группу'));
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/movienight/groups/g1'));
     expect(router.state.historyAction).toBe('REPLACE');
@@ -77,7 +77,7 @@ describe('"Вступление" (AC-28)', () => {
 
     await expectText(INVITE_GONE);
     await waitFor(() => expect(tg.mainText).toBe('К моим группам'));
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     await waitFor(() => expect(router.state.location.pathname).toBe('/movienight'));
   });
 
@@ -89,7 +89,7 @@ describe('"Вступление" (AC-28)', () => {
     renderAt('/movienight', JOIN);
     await expectText('Приглашение в группу');
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText(INVITE_GONE);
     await waitFor(() => expect(tg.mainText).toBe('К моим группам'));
@@ -103,7 +103,7 @@ describe('"Вступление" (AC-28)', () => {
     renderAt('/movienight', JOIN);
     await expectText('Приглашение в группу');
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Можно состоять не больше чем в 20 группах.');
     await waitFor(() => expect(tg.mainText).toBe('К моим группам'));
@@ -165,9 +165,9 @@ describe('"Переименование" (AC-29)', () => {
     fireEvent.change(input(), { target: { value: ' Киноклуб ' } });
     await waitFor(() => expect(lastMain()?.enabled).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     await waitFor(() => expect(lastMain()?.loading).toBe(true));
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
     expect(api.count('PUT', '/movienight/groups/g1/name')).toBe(1);
     expect(api.calls.find((c) => c.method === 'PUT')?.body).toEqual({ name: ' Киноклуб ' });
     await act(async () => {
@@ -187,7 +187,7 @@ describe('"Переименование" (AC-29)', () => {
     fireEvent.change(input(), { target: { value: 'Новое' } });
     await waitFor(() => expect(lastMain()?.enabled).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText(NOT_OWNER);
   });
@@ -203,7 +203,7 @@ describe('"Переименование" (AC-29)', () => {
     fireEvent.change(input(), { target: { value: 'Новое' } });
     await waitFor(() => expect(lastMain()?.enabled).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Группа не найдена');
   });
@@ -222,7 +222,7 @@ describe('"Переименование" (AC-29)', () => {
 
     await expectText(NOT_OWNER);
     await waitFor(() => expect(tg.mainVisible).toBe(false));
-    act(() => tg.pressMain());
+    act(() => tg.pressMain()); // кнопки нет намеренно
     expect(api.calls.filter((c) => c.method === 'PUT')).toHaveLength(0);
   });
 
@@ -238,7 +238,7 @@ describe('"Переименование" (AC-29)', () => {
     fireEvent.change(input(), { target: { value: 'Новое' } });
     await waitFor(() => expect(lastMain()?.enabled).toBe(true));
 
-    act(() => tg.pressMain());
+    await pressMainWhenReady();
 
     await expectText('Название — от 1 до 64 символов, без переводов строк.');
   });
