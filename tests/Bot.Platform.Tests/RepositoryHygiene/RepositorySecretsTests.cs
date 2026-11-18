@@ -13,7 +13,7 @@ public class RepositorySecretsTests
 
         // Контроль: набор кандидатов реален (иначе тест зелёный по неверной причине).
         Assert.Contains("README.md", candidates);
-        Assert.Contains("deploy/multibot.env.example", candidates);
+        Assert.Contains("deploy/server/multibot.env.example", candidates);
 
         var scanned = 0;
         var findings = new List<SecretFinding>();
