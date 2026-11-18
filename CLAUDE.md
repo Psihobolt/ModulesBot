@@ -64,6 +64,10 @@ docs/
 - Разработчики не правят тесты, tester не правит production-код.
 - Задача закрыта, когда: сборки чистые, все тесты зелёные, critic = `APPROVED`.
 - Максимум 3 круга «critic → исправление», дальше — к пользователю.
+- Preflight перед `/feature`: Context7 отвечает, `dotnet build -warnaserror` проходит на текущем состоянии.
+  Сбой окружения (ключ Context7, NuGet-фид) решается до реализации, а не обходом флагов в агентах.
+- Одна спецификация за раз: следующая пишется после `DONE` предыдущей (иначе её дорого сверять с кодом).
+- Отклонения от текста спеки разработчики не решают сами: поле `DEVIATIONS`/`ISSUES` → architect.
 
 ## Команды
 - Backend: `dotnet build -warnaserror`, `dotnet test --nologo`, `dotnet format --verify-no-changes`
